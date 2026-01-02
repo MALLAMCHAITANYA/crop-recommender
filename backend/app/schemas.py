@@ -1,10 +1,18 @@
 from pydantic import BaseModel
+from typing import List
 
-class UserCreate(BaseModel):
-    name: str
-    email: str
-    password: str
+class CropInput(BaseModel):
+    N: float
+    P: float
+    K: float
+    temperature: float
+    humidity: float
+    ph: float
+    rainfall: float
 
-class UserLogin(BaseModel):
-    email: str
-    password: str
+class CropRecommendation(BaseModel):
+    crop: str
+    confidence: float
+
+class PredictionResponse(BaseModel):
+    recommendations: List[CropRecommendation]

@@ -1,11 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import joblib
-import pandas as pd
 
-app = FastAPI()  # <-- Create app first!
+from app.predict import predict_top3
+from app.schemas import CropInput, PredictionResponse
 
+app = FastAPI(title="Crop Recommendation System")
+
+# -------------------------------------------------
 # Enable CORS
+# -------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,17 +17,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load the model and encoder
-model = joblib.load("app/model.pkl")
-label_encoder = joblib.load("app/label_encoder.pkl")
+# -------------------------------------------------
+# Crop Prediction API (Top-3)
+# -------------------------------------------------
+@app.post("/predict", response_model=PredictionResponse)
+async def predict(data: CropInput):
 
-@app.post("/predict")
-async def predict(data: dict):
-    df = pd.DataFrame([data])
-    prediction = model.predict(df)[0]
-    crop = label_encoder.inverse_transform([prediction])[0]
-    return {"Recommended Crop": crop}
+    input_data = [[
+        data.N,
+        data.P,
+        data.K,
+        data.temperature,
+        data.humidity,
+        data.ph,
+        data.rainfall
+    ]]
 
+    results = predict_top3(input_data)
+
+    return {
+        "recommendations": results
+    }
+
+# -------------------------------------------------
+# Root Endpoint
+# -------------------------------------------------
 @app.get("/")
 def home():
     return {"message": "Crop Recommendation API Running!"}
